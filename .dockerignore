@@ -1,0 +1,23 @@
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+**/!.env.example
+
+# Dependencies, generated output, and logs
+**/node_modules/
+**/output/
+**/dist/
+**/build/
+**/coverage/
+**/*.log
+
+# Git and local editor/system files
+.git/
+.idea/
+.vscode/
+**/.DS_Store
+**/Thumbs.db
+**/Desktop.ini
