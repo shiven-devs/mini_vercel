@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Deployment and security monitor">
+    <title>Deploy Console</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Deployment platform</p>
+          <h1>Deploy Console</h1>
+          <p class="subtle">Deploy a repository, follow its build, and monitor live access activity.</p>
+        </div>
+        <div class="connection" id="connection-status" aria-live="polite">Connecting to logs…</div>
+      </header>
+
+      <section class="alert hidden" id="security-alert" role="alert" aria-live="assertive">
+        <div>
+          <p class="eyebrow">Security alert</p>
+          <h2 id="alert-title">Attack rule triggered</h2>
+          <p id="alert-message"></p>
+        </div>
+        <button class="icon-button" type="button" id="dismiss-alert" aria-label="Dismiss security alert">×</button>
+      </section>
+
+      <section class="card deploy-card">
+        <div class="card-heading">
+          <div>
+            <p class="eyebrow">New deployment</p>
+            <h2>Deploy a Git repository</h2>
+          </div>
+          <span class="pill">ECS build</span>
+        </div>
+        <form id="deploy-form">
+          <label>
+            Git repository URL
+            <input id="git-url" name="gitURL" type="url" placeholder="https://github.com/owner/repository.git" required autocomplete="url">
+          </label>
+          <label>
+            Project slug <span class="optional">optional</span>
+            <input id="project-slug" name="slug" type="text" placeholder="my-site" pattern="[a-z0-9][a-z0-9-]{0,62}" autocomplete="off">
+          </label>
+          <label>
+            Socket token <span class="optional">only if configured</span>
+            <input id="socket-token" type="password" placeholder="Not saved in the browser" autocomplete="off">
+          </label>
+          <button id="connect-button" class="secondary-button" type="button">Connect to live logs</button>
+          <button id="deploy-button" type="submit">Deploy project</button>
+        </form>
+        <p class="form-status" id="form-status" aria-live="polite"></p>
+        <a class="deployment-link hidden" id="deployment-link" target="_blank" rel="noopener">Open deployed site</a>
+      </section>
+
+      <section class="grid" aria-label="Live deployment activity">
+        <article class="card log-card">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow">Live output</p>
+              <h2>Build logs</h2>
+            </div>
+            <button class="clear-button" type="button" data-clear="build-log">Clear</button>
+          </div>
+          <pre id="build-log" class="log-output" aria-live="polite">Waiting for a deployment…</pre>
+        </article>
+
+        <article class="card log-card">
+          <div class="card-heading">
+            <div>
+              <p class="eyebrow">Live traffic</p>
+              <h2>Application logs</h2>
+            </div>
+            <button class="clear-button" type="button" data-clear="application-log">Clear</button>
+          </div>
+          <pre id="application-log" class="log-output" aria-live="polite">Access logs appear after the deployed site receives requests.</pre>
+        </article>
+      </section>
+    </main>
+    <script src="/runtime-config.js"></script>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+:root {
+  color-scheme: dark;
+  --background: #0b1020;
+  --surface: #141c31;
+  --surface-strong: #1a2540;
+  --border: #2a395b;
+  --text: #f3f6ff;
+  --muted: #aab7d3;
+  --accent: #73e0b1;
+  --accent-dark: #10392d;
+  --danger: #ff9b9b;
+  --danger-dark: #431d2a;
+  --shadow: 0 18px 50px rgb(0 0 0 / 0.24);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background: radial-gradient(circle at top right, #1b3258 0, var(--background) 36rem);
+  color: var(--text);
+  font: 16px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button, input { font: inherit; }
+
+.shell { width: min(1180px, calc(100% - 2rem)); margin: 0 auto; padding: 3rem 0 4rem; }
+.hero, .card-heading, .alert, .connection { display: flex; align-items: center; }
+.hero { justify-content: space-between; gap: 2rem; margin-bottom: 2rem; }
+h1, h2, p { margin-top: 0; }
+h1 { margin-bottom: .35rem; font-size: clamp(2rem, 5vw, 3.5rem); letter-spacing: -.06em; }
+h2 { margin-bottom: 0; font-size: 1.15rem; }
+.subtle, .optional { color: var(--muted); }
+.eyebrow { margin-bottom: .35rem; color: var(--accent); font-size: .72rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.connection, .pill { border: 1px solid var(--border); border-radius: 999px; padding: .45rem .75rem; color: var(--muted); font-size: .8rem; white-space: nowrap; }
+.connection.connected { border-color: #2f8062; color: var(--accent); background: var(--accent-dark); }
+.connection.error { border-color: #85505b; color: var(--danger); }
+
+.card, .alert { border: 1px solid var(--border); border-radius: 18px; background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: var(--shadow); }
+.card { padding: 1.4rem; }
+.deploy-card { margin-bottom: 1.25rem; }
+.card-heading { justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+
+form { display: grid; grid-template-columns: 2fr 1fr 1fr auto; align-items: end; gap: 1rem; }
+label { display: grid; gap: .45rem; color: var(--muted); font-size: .86rem; }
+input { width: 100%; border: 1px solid var(--border); border-radius: 9px; outline: none; padding: .75rem .85rem; background: #0c1325; color: var(--text); }
+input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(115 224 177 / .14); }
+button { cursor: pointer; border: 0; border-radius: 9px; padding: .78rem 1rem; background: var(--accent); color: #062016; font-weight: 750; }
+button:disabled { cursor: wait; opacity: .65; }
+.secondary-button { border: 1px solid var(--border); background: transparent; color: var(--text); }
+.secondary-button:hover { border-color: var(--accent); color: var(--accent); }
+.form-status { min-height: 1.5rem; margin: 1rem 0 0; color: var(--muted); }
+.form-status.error { color: var(--danger); }
+.deployment-link { color: var(--accent); font-weight: 650; }
+
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.log-card { min-width: 0; }
+.log-output { min-height: 23rem; max-height: 32rem; overflow: auto; margin: 0; padding: 1rem; border: 1px solid #202d4b; border-radius: 10px; background: #080d19; color: #ced9ef; font: .8rem/1.55 "SFMono-Regular", Consolas, "Liberation Mono", monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.clear-button { padding: .35rem .55rem; background: transparent; color: var(--muted); font-size: .78rem; font-weight: 600; }
+.clear-button:hover { color: var(--text); }
+
+.alert { justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; border-color: #7d4550; padding: 1rem 1.25rem; background: var(--danger-dark); }
+.alert .eyebrow { color: var(--danger); }
+.alert p:last-child { margin-bottom: 0; color: #ffd7d7; }
+.icon-button { padding: .25rem .6rem; background: transparent; color: var(--danger); font-size: 1.6rem; line-height: 1; }
+.hidden { display: none; }
+
+@media (max-width: 800px) {
+  .shell { padding-top: 1.5rem; }
+  .hero, .card-heading { align-items: flex-start; flex-direction: column; }
+  form, .grid { grid-template-columns: 1fr; }
+  form button { width: 100%; }
+}

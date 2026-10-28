@@ -11,6 +11,14 @@ const PORT = Number(process.env.API_PORT || 9000)
 const SOCKET_PORT = Number(process.env.SOCKET_PORT || 9002)
 
 app.use(express.json())
+app.use(express.static(path.join(__dirname, 'public')))
+app.get('/runtime-config.js', (req, res) => {
+    res.type('application/javascript').send(`window.DEPLOYMENT_DASHBOARD_CONFIG = ${JSON.stringify({
+        socketPort: SOCKET_PORT,
+        securityDemoProject: process.env.SECURITY_DEMO_PROJECT_ID || 'security-demo',
+        defaultProject: process.env.DEFAULT_PROJECT_ID || 'default-project'
+    })};`)
+})
 
 // ==========================================
 // 1. REDIS SUBSCRIBER
@@ -35,18 +43,24 @@ const io = new Server({
 })
 
 io.on('connection', socket => {
+    const socketToken = process.env.SOCKET_AUTH_TOKEN
+    if (socketToken && socket.handshake.auth?.token !== socketToken) {
+        socket.emit('error', 'Unauthorized socket')
+        socket.disconnect(true)
+        return
+    }
     console.log('Client connected:', socket.id)
 
-    // Client subscribes to a project's logs
     socket.on('subscribe', async channel => {
+    if (typeof channel !== 'string' || !/^(logs|project):[a-z0-9][a-z0-9-]{0,62}$/.test(channel)) {
+        return socket.emit('error', 'Invalid subscription channel')
+    }
     await socket.join(channel)
 
     console.log(`${socket.id} joined room: ${channel}`)
 
     socket.emit('message', `Joined ${channel}`)
 
-    // Test: directly send a message to the room
-    io.to(channel).emit('message', 'TEST: Socket.IO room is working')
 })
 
     socket.on('disconnect', () => {
@@ -65,10 +79,32 @@ io.listen(SOCKET_PORT, () => {
 async function initRedisSubscribe() {
     console.log('Subscribing to build logs...')
 
-    // Listen to all Redis channels starting with logs:
-    await subscriber.psubscribe('logs:*')
+    await subscriber.psubscribe('logs:*', 'security:incidents', 'application-logs:*')
 
     subscriber.on('pmessage', (pattern, channel, message) => {
+        if (channel === 'security:incidents') {
+            try {
+                const incident = JSON.parse(message)
+                if (incident.project_id && /^[a-z0-9][a-z0-9-]{0,62}$/.test(incident.project_id)) {
+                    io.to(`project:${incident.project_id}`).emit('security:incident', incident)
+                }
+            } catch (error) {
+                console.error('Security incident parse error:', error.message)
+            }
+            return
+        }
+        if (channel.startsWith('application-logs:')) {
+            const projectId = channel.slice('application-logs:'.length)
+            try {
+                const log = JSON.parse(message)
+                if (/^[a-z0-9][a-z0-9-]{0,62}$/.test(projectId)) {
+                    io.to(`project:${projectId}`).emit('application:log', log)
+                }
+            } catch (error) {
+                console.error('Application log parse error:', error.message)
+            }
+            return
+        }
         console.log('Redis channel:', channel)
         console.log('Build log:', message)
 
@@ -170,6 +206,12 @@ app.post('/project', async (req, res) => {
                 failures: result.failures
             })
         }
+
+        io.to(`project:${projectSlug}`).emit('application:log', {
+            timestamp: new Date().toISOString(),
+            level: 'info',
+            message: 'Deployment task queued'
+        })
 
         return res.json({
             status: 'queued',
