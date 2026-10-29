@@ -1,4 +1,5 @@
 const express = require('express')
+const http = require('http')
 const path = require('path')
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
 const { generateSlug } = require('random-word-slugs')
@@ -8,10 +9,24 @@ const Redis = require('ioredis')
 const { createClient } = require('@supabase/supabase-js')
 
 const app = express()
-const PORT = Number(process.env.API_PORT || 9000)
+const server = http.createServer(app)
+
+// Hosts like Render expose a single port and provide it as PORT.
+const PORT = Number(process.env.PORT || process.env.API_PORT || 9000)
 const SOCKET_PORT = Number(process.env.SOCKET_PORT || 9002)
 
 app.use(express.json())
+
+// Allow the Next.js frontend to call this API from another origin.
+app.use((req, res, next) => {
+    res.set('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*')
+    res.set('Access-Control-Allow-Headers', 'Content-Type')
+    res.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    if (req.method === 'OPTIONS') return res.sendStatus(204)
+    next()
+})
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }))
 
 // ==========================================
 // 1. REDIS SUBSCRIBER
@@ -102,9 +117,15 @@ io.on('connection', socket => {
     })
 })
 
-io.listen(SOCKET_PORT, () => {
-    console.log(`Socket Server running on port ${SOCKET_PORT}`)
-})
+// Share the Express port so a single-port host (Render) can serve both.
+io.attach(server)
+
+// Locally, also keep the dedicated socket port.
+if (!process.env.PORT && SOCKET_PORT !== PORT) {
+    io.listen(SOCKET_PORT, () => {
+        console.log(`Socket Server running on port ${SOCKET_PORT}`)
+    })
+}
 
 // ==========================================
 // 3. REDIS -> SOCKET.IO LOG FORWARDING
@@ -247,6 +268,6 @@ app.post('/project', async (req, res) => {
 // 6. START EXPRESS API SERVER
 // ==========================================
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`API Server running on port ${PORT}`)
 })

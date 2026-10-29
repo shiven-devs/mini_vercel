@@ -4,7 +4,7 @@ const path = require('path')
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
 
 const app = express()
-const PORT = Number(process.env.PROXY_PORT || 8000)
+const PORT = Number(process.env.PORT || process.env.PROXY_PORT || 8000)
 
 const BASE_PATH = process.env.S3_OUTPUT_BASE_URL
 if (!BASE_PATH) throw new Error('S3_OUTPUT_BASE_URL environment variable is required')

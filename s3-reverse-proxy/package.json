@@ -1,4 +1,9 @@
 {
+  "name": "s3-reverse-proxy",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
