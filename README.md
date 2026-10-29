@@ -4,24 +4,16 @@ A self-hosted deployment platform. Paste a GitHub URL, and the project is cloned
 
 ---
 
+## Architecture
+
+![Architecture diagram: a developer submits a Git URL to the API server, which runs an ECS Fargate task that clones the repo, builds it and uploads the output to S3. Build logs flow through Redis Pub/Sub and Socket.IO to the dashboard. Visitor requests reach the security proxy, which serves the site from S3 and publishes security events back to Redis.](image.png)
+
+> The **security proxy** in the diagram — request rate limiting, scan, brute-force
+> and replay detection — is the planned next phase. What ships today is the
+> reverse proxy in [`s3-reverse-proxy/`](s3-reverse-proxy/), which does the
+> subdomain routing without the detection layer.
+
 ## How it works
-
-```
-Browser ──> Next.js frontend ──> API server ──> AWS ECS (Fargate)
-                                     │                  │
-                                     │                  ├─ git clone
-                                     │                  ├─ npm install && npm run build
-                                     │                  └─ upload to S3
-                                     │                  │
-                                     │   logs           ▼
-                                     └──── Redis Pub/Sub
-                                     │
-                                     ▼
-                              Socket.IO ──> live logs in browser
-
-
-Visitor ──> slug.yourdomain.com ──> reverse proxy ──> S3/__outputs/slug/
-```
 
 1. A user signs in and submits a Git URL from the dashboard.
 2. The **API server** records the deployment in Supabase and starts an **ECS Fargate** task.
