@@ -5,6 +5,7 @@ const { generateSlug } = require('random-word-slugs')
 const { ECSClient, RunTaskCommand } = require('@aws-sdk/client-ecs')
 const { Server } = require('socket.io')
 const Redis = require('ioredis')
+const { createClient } = require('@supabase/supabase-js')
 
 const app = express()
 const PORT = Number(process.env.API_PORT || 9000)
@@ -22,6 +23,53 @@ function requiredEnv(name) {
     const value = process.env[name]
     if (!value) throw new Error(`${name} environment variable is required`)
     return value
+}
+
+// ==========================================
+// 1b. SUPABASE (optional log persistence)
+// ==========================================
+
+// Service role key bypasses RLS, so keep it on the server only.
+const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false }
+    })
+    : null
+
+if (!supabase) {
+    console.warn('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set: build logs will not be saved')
+}
+
+// Final lines published by build_server/script.js
+function statusFromLog(log) {
+    if (log.includes('Deployment Complete!')) return 'ready'
+    if (log.startsWith('Deployment failed')) return 'failed'
+    return null
+}
+
+async function saveLog(channel, message) {
+    if (!supabase) return
+
+    const slug = channel.slice('logs:'.length)
+
+    let log = message
+    try {
+        log = JSON.parse(message).log ?? message
+    } catch {}
+
+    const { error } = await supabase
+        .from('deployment_logs')
+        .insert({ slug, log: String(log) })
+
+    if (error) {
+        console.error('Failed to save build log:', error.message)
+        return
+    }
+
+    const status = statusFromLog(String(log))
+    if (status) {
+        await supabase.from('deployments').update({ status }).eq('slug', slug)
+    }
 }
 
 // ==========================================
@@ -74,6 +122,11 @@ async function initRedisSubscribe() {
 
         // Forward the log to clients in the matching Socket.IO room
         io.to(channel).emit('message', message)
+
+        // Persist the log so the dashboard can show it after the build ends
+        saveLog(channel, message).catch(error => {
+            console.error('Failed to save build log:', error.message)
+        })
     })
 
     console.log('Subscribed to Redis pattern: logs:*')
